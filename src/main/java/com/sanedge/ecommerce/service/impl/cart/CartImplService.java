@@ -1,0 +1,139 @@
+package com.sanedge.ecommerce.service.impl.cart;
+
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
+import com.sanedge.ecommerce.domain.requests.cart.CreateCartRequest;
+import com.sanedge.ecommerce.domain.requests.cart.DeleteCartRequest;
+import com.sanedge.ecommerce.domain.requests.cart.FindAllCartsRequest;
+import com.sanedge.ecommerce.domain.responses.api.ApiResponse;
+import com.sanedge.ecommerce.domain.responses.api.ApiResponsePagination;
+import com.sanedge.ecommerce.domain.responses.api.PaginationMeta;
+import com.sanedge.ecommerce.domain.responses.cart.CartResponse;
+import com.sanedge.ecommerce.models.Cart;
+import com.sanedge.ecommerce.repository.cart.CartCommandRepository;
+import com.sanedge.ecommerce.repository.cart.CartQueryRepository;
+import com.sanedge.ecommerce.service.CartService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@RequiredArgsConstructor
+@Service
+public class CartImplService implements CartService {
+    private final CartQueryRepository cartQueryRepository;
+    private final CartCommandRepository cartCommandRepository;
+
+    @Override
+    public ApiResponsePagination<List<CartResponse>> findAll(FindAllCartsRequest req) {
+        log.info("📥 Fetching carts for userId={} | search='{}' | page={} | pageSize={}",
+                req.getUserId(), req.getSearch(), req.getPage(), req.getPageSize());
+
+        Pageable pageable = PageRequest.of(req.getPage() - 1, req.getPageSize(), Sort.by("createdAt").descending());
+
+        try {
+            Page<Cart> carts = cartQueryRepository.findCartsByUser(req.getUserId(), req.getSearch(), pageable);
+
+            List<CartResponse> data = carts.getContent().stream()
+                    .map(CartResponse::from)
+                    .toList();
+
+            return ApiResponsePagination.<List<CartResponse>>builder()
+                    .status("success")
+                    .message("Cart data fetched successfully")
+                    .data(data)
+                    .pagination(PaginationMeta.fromSpringPage(carts))
+                    .build();
+
+        } catch (Exception e) {
+            log.error("💥 Failed fetching carts for userId={}", req.getUserId(), e);
+            return ApiResponsePagination.<List<CartResponse>>builder()
+                    .status("error")
+                    .message("Failed to fetch carts")
+                    .data(List.of())
+                    .pagination(null)
+                    .build();
+        }
+    }
+
+    @Override
+    public ApiResponse<CartResponse> createCart(CreateCartRequest req) {
+        log.info("➕ Creating new cart for userId={} | productId={} | quantity={}",
+                req.getUserId(), req.getProductId(), req.getQuantity());
+        try {
+            Cart cart = new Cart();
+            cart.setUserId(req.getUserId());
+            cart.setProductId(req.getProductId());
+            cart.setQuantity(req.getQuantity());
+            cart.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
+
+            Cart savedCart = cartCommandRepository.save(cart);
+
+            return ApiResponse.<CartResponse>builder()
+                    .status("success")
+                    .message("Cart created successfully")
+                    .data(CartResponse.from(savedCart))
+                    .build();
+
+        } catch (Exception e) {
+            log.error("💥 Failed to create cart for userId={} | productId={}", req.getUserId(), req.getProductId(), e);
+            return ApiResponse.<CartResponse>builder()
+                    .status("error")
+                    .message("Failed to create cart")
+                    .data(null)
+                    .build();
+        }
+    }
+
+    @Override
+    public ApiResponse<Boolean> deletePermanent(Long cartId) {
+        log.info("🗑️ Deleting cart with id={}", cartId);
+        try {
+            cartCommandRepository.deleteCartById(cartId);
+            return ApiResponse.<Boolean>builder()
+                    .status("success")
+                    .message("Cart deleted permanently")
+                    .data(true)
+                    .build();
+        } catch (Exception e) {
+            log.error("💥 Failed to delete cart with id={}", cartId, e);
+            return ApiResponse.<Boolean>builder()
+                    .status("error")
+                    .message("Failed to delete cart")
+                    .data(false)
+                    .build();
+        }
+    }
+
+    @Override
+    public ApiResponse<Boolean> deleteAllPermanently(DeleteCartRequest req) {
+        log.info("🗑️ Deleting carts with ids={}", req.getCartIds());
+        try {
+            List<Long> ids = req.getCartIds().stream()
+                    .map(Integer::longValue)
+                    .toList();
+            cartCommandRepository.deleteCartsByIds(ids);
+
+            return ApiResponse.<Boolean>builder()
+                    .status("success")
+                    .message("Carts deleted permanently")
+                    .data(true)
+                    .build();
+        } catch (Exception e) {
+            log.error("💥 Failed to delete carts ids={}", req.getCartIds(), e);
+            return ApiResponse.<Boolean>builder()
+                    .status("error")
+                    .message("Failed to delete carts")
+                    .data(false)
+                    .build();
+        }
+    }
+}
