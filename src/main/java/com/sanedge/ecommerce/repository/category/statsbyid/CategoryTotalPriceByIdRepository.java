@@ -46,9 +46,9 @@ public interface CategoryTotalPriceByIdRepository extends JpaRepository<Category
                            TO_CHAR(MAKE_DATE(:endYear, :endMonth, 1), 'FMMonth') AS month_name
                 )
                 SELECT
-                    am.year,
-                    am.month_name,
-                    COALESCE(mt.totalRevenue, 0)
+                    am.year AS year,
+                    am.month AS month,
+                    COALESCE(mt.totalRevenue, 0) AS totalRevenue
                 FROM all_months am
                 LEFT JOIN monthly_totals mt
                     ON am.year = mt.year AND am.month_num = mt.month_num

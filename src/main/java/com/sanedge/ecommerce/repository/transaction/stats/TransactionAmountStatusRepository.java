@@ -25,7 +25,7 @@ public interface TransactionAmountStatusRepository extends JpaRepository<Transac
                 FROM transactions t
                 WHERE
                     t.deleted_at IS NULL
-                    AND t.payment_status = 'success'
+                    AND t.status = 'SUCCESS'
                     AND (
                         (t.created_at >= make_date(:year, :month, 1)
                          AND t.created_at < (make_date(:year, :month, 1) + interval '1 month'))
@@ -36,10 +36,11 @@ public interface TransactionAmountStatusRepository extends JpaRepository<Transac
                 GROUP BY EXTRACT(YEAR FROM t.created_at), EXTRACT(MONTH FROM t.created_at)
             ),
             formatted_data AS (
-                SELECT year::text,
-                       TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-                       total_success,
-                       total_amount
+                SELECT
+                    year::text AS year,
+                    TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
+                    total_success::int AS totalSuccess,
+                    total_amount::bigint AS totalAmount
                 FROM monthly_data
                 UNION ALL
                 SELECT :year::text,
@@ -76,13 +77,17 @@ public interface TransactionAmountStatusRepository extends JpaRepository<Transac
                 FROM transactions t
                 WHERE
                     t.deleted_at IS NULL
-                    AND t.payment_status = 'success'
+                    AND t.status = 'SUCCESS'
                     AND (EXTRACT(YEAR FROM t.created_at) = :year
                          OR EXTRACT(YEAR FROM t.created_at) = :year - 1)
                 GROUP BY EXTRACT(YEAR FROM t.created_at)
             ),
             formatted_data AS (
-                SELECT year::text, total_success, total_amount FROM yearly_data
+                SELECT
+                    year::text AS year,
+                    total_success::int AS totalSuccess,
+                    total_amount::bigint AS totalAmount
+                FROM yearly_data
                 UNION ALL
                 SELECT :year::text, 0, 0 WHERE NOT EXISTS (SELECT 1 FROM yearly_data WHERE year = :year)
                 UNION ALL
@@ -103,7 +108,7 @@ public interface TransactionAmountStatusRepository extends JpaRepository<Transac
                 FROM transactions t
                 WHERE
                     t.deleted_at IS NULL
-                    AND t.payment_status = 'failed'
+                    AND t.status = 'FAILED'
                     AND (
                         (t.created_at >= make_date(:year, :month, 1)
                          AND t.created_at < (make_date(:year, :month, 1) + interval '1 month'))
@@ -114,10 +119,11 @@ public interface TransactionAmountStatusRepository extends JpaRepository<Transac
                 GROUP BY EXTRACT(YEAR FROM t.created_at), EXTRACT(MONTH FROM t.created_at)
             ),
             formatted_data AS (
-                SELECT year::text,
-                       TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-                       total_failed,
-                       total_amount
+                SELECT
+                    year::text AS year,
+                    TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
+                    total_failed::int AS totalFailed,
+                    total_amount::bigint AS totalAmount
                 FROM monthly_data
                 UNION ALL
                 SELECT :year::text,
@@ -154,13 +160,17 @@ public interface TransactionAmountStatusRepository extends JpaRepository<Transac
                 FROM transactions t
                 WHERE
                     t.deleted_at IS NULL
-                    AND t.payment_status = 'failed'
+                    AND t.status = 'FAILED'
                     AND (EXTRACT(YEAR FROM t.created_at) = :year
                          OR EXTRACT(YEAR FROM t.created_at) = :year - 1)
                 GROUP BY EXTRACT(YEAR FROM t.created_at)
             ),
             formatted_data AS (
-                SELECT year::text, total_failed, total_amount FROM yearly_data
+                SELECT
+                    year::text AS year,
+                    total_failed::int AS totalFailed,
+                    total_amount::bigint AS totalAmount
+                FROM yearly_data
                 UNION ALL
                 SELECT :year::text, 0, 0 WHERE NOT EXISTS (SELECT 1 FROM yearly_data WHERE year = :year)
                 UNION ALL

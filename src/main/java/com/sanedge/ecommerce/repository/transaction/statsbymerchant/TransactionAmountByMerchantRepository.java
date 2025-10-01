@@ -18,14 +18,14 @@ public interface TransactionAmountByMerchantRepository extends JpaRepository<Tra
     @Query(value = """
             WITH monthly_data AS (
                 SELECT
-                    EXTRACT(YEAR FROM t.created_at)::integer AS year,
-                    EXTRACT(MONTH FROM t.created_at)::integer AS month,
-                    COUNT(*) AS total_success,
-                    COALESCE(SUM(t.amount), 0)::BIGINT AS total_amount
-                FROM transactions t
+                    year::text AS year,
+                    TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
+                    total_success::int AS totalSuccess,
+                    total_amount::bigint AS totalAmount
+                FROM monthly_data
                 WHERE
                     t.deleted_at IS NULL
-                    AND t.payment_status = 'success'
+                    AND t.status = 'SUCCESS'
                     AND t.merchant_id = :merchantId
                     AND (
                         (t.created_at >= make_date(:year, :month, 1)
@@ -72,13 +72,13 @@ public interface TransactionAmountByMerchantRepository extends JpaRepository<Tra
     @Query(value = """
             WITH yearly_data AS (
                 SELECT
-                    EXTRACT(YEAR FROM t.created_at)::integer AS year,
-                    COUNT(*) AS total_success,
-                    COALESCE(SUM(t.amount), 0)::BIGINT AS total_amount
-                FROM transactions t
+                    year::text AS year,
+                    total_success::int AS totalSuccess,
+                    total_amount::bigint AS totalAmount
+                FROM yearly_data
                 WHERE
                     t.deleted_at IS NULL
-                    AND t.payment_status = 'success'
+                    AND t.status = 'SUCCESS'
                     AND t.merchant_id = :merchantId
                     AND (EXTRACT(YEAR FROM t.created_at) = :year
                          OR EXTRACT(YEAR FROM t.created_at) = :year - 1)
@@ -108,7 +108,7 @@ public interface TransactionAmountByMerchantRepository extends JpaRepository<Tra
                 FROM transactions t
                 WHERE
                     t.deleted_at IS NULL
-                    AND t.payment_status = 'failed'
+                    AND t.status = 'FAILEd'
                     AND t.merchant_id = :merchantId
                     AND (
                         (t.created_at >= make_date(:year, :month, 1)
@@ -120,10 +120,11 @@ public interface TransactionAmountByMerchantRepository extends JpaRepository<Tra
                 GROUP BY EXTRACT(YEAR FROM t.created_at), EXTRACT(MONTH FROM t.created_at)
             ),
             formatted_data AS (
-                SELECT year::text,
-                       TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
-                       total_failed,
-                       total_amount
+                SELECT
+                    year::text AS year,
+                    TO_CHAR(TO_DATE(month::text, 'MM'), 'Mon') AS month,
+                    total_failed::int AS totalFailed,
+                    total_amount::bigint AS totalAmount
                 FROM monthly_data
                 UNION ALL
                 SELECT :year::text,
@@ -161,14 +162,18 @@ public interface TransactionAmountByMerchantRepository extends JpaRepository<Tra
                 FROM transactions t
                 WHERE
                     t.deleted_at IS NULL
-                    AND t.payment_status = 'failed'
+                    AND t.status = 'FAILED'
                     AND t.merchant_id = :merchantId
                     AND (EXTRACT(YEAR FROM t.created_at) = :year
                          OR EXTRACT(YEAR FROM t.created_at) = :year - 1)
                 GROUP BY EXTRACT(YEAR FROM t.created_at)
             ),
             formatted_data AS (
-                SELECT year::text, total_failed, total_amount FROM yearly_data
+                SELECT
+                    year::text AS year,
+                    total_failed::int AS totalFailed,
+                    total_amount::bigint AS totalAmount
+                FROM yearly_data
                 UNION ALL
                 SELECT :year::text, 0, 0 WHERE NOT EXISTS (SELECT 1 FROM yearly_data WHERE year = :year)
                 UNION ALL

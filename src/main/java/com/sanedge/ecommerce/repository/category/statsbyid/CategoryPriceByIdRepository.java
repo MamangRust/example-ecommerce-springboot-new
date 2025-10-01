@@ -48,61 +48,61 @@ public interface CategoryPriceByIdRepository extends JpaRepository<Category, Lon
             )
             SELECT
                 TO_CHAR(mcs.activity_month, 'Mon') AS month,
-                mcs.category_id,
-                mcs.category_name,
-                mcs.order_count,
-                mcs.items_sold,
-                mcs.totalRevenue
+                mcs.category_id AS categoryId,
+                mcs.category_name AS categoryName,
+                mcs.order_count AS orderCount,
+                mcs.items_sold AS itemsSold,
+                mcs.total_revenue AS totalRevenue
             FROM
                 monthly_category_stats mcs
             ORDER BY
-                mcs.activity_month, mcs.totalRevenue DESC
+                mcs.activity_month, mcs.total_revenue DESC
             """, nativeQuery = true)
     List<CategoriesMonthPrice> findMonthlyCategoryStatsById(
             @Param("categoryId") Integer categoryId,
             @Param("year") Integer year);
 
     @Query(value = """
-            WITH last_five_years AS (
+                WITH last_five_years AS (
+                    SELECT
+                        c.category_id,
+                        c.name AS category_name,
+                        EXTRACT(YEAR FROM o.created_at)::text AS year,
+                        COUNT(DISTINCT o.order_id) AS order_count,
+                        SUM(oi.quantity) AS items_sold,
+                        COALESCE(SUM(o.total_price), 0)::bigint AS totalRevenue,
+                        COUNT(DISTINCT oi.product_id) AS unique_products_sold
+                    FROM
+                        orders o
+                    JOIN
+                        order_items oi ON o.order_id = oi.order_id
+                    JOIN
+                        products p ON oi.product_id = p.product_id
+                    JOIN
+                        categories c ON p.category_id = c.category_id
+                    WHERE
+                        o.deleted_at IS NULL
+                        AND oi.deleted_at IS NULL
+                        AND p.deleted_at IS NULL
+                        AND c.deleted_at IS NULL
+                        AND c.category_id = :categoryId
+                        AND EXTRACT(YEAR FROM o.created_at) BETWEEN (:year - 4) AND :year
+                    GROUP BY
+                        c.category_id, c.name, EXTRACT(YEAR FROM o.created_at)
+                )
                 SELECT
-                    c.category_id,
-                    c.name AS category_name,
-                    EXTRACT(YEAR FROM o.created_at)::text AS year,
-                    COUNT(DISTINCT o.order_id) AS order_count,
-                    SUM(oi.quantity) AS items_sold,
-                    COALESCE(SUM(o.total_price), 0)::bigint AS totalRevenue,
-                    COUNT(DISTINCT oi.product_id) AS unique_products_sold
-                FROM
-                    orders o
-                JOIN
-                    order_items oi ON o.order_id = oi.order_id
-                JOIN
-                    products p ON oi.product_id = p.product_id
-                JOIN
-                    categories c ON p.category_id = c.category_id
-                WHERE
-                    o.deleted_at IS NULL
-                    AND oi.deleted_at IS NULL
-                    AND p.deleted_at IS NULL
-                    AND c.deleted_at IS NULL
-                    AND c.category_id = :categoryId
-                    AND EXTRACT(YEAR FROM o.created_at) BETWEEN (:year - 4) AND :year
-                GROUP BY
-                    c.category_id, c.name, EXTRACT(YEAR FROM o.created_at)
-            )
-            SELECT
-                year,
-                category_id,
-                category_name,
-                order_count,
-                items_sold,
-                totalRevenue,
-                unique_products_sold
+                year AS year,
+                category_id AS categoryId,
+                category_name AS categoryName,
+                order_count AS orderCount,
+                items_sold AS itemsSold,
+                total_revenue AS totalRevenue,
+                unique_products_sold AS uniqueProductsSold
             FROM
                 last_five_years
             ORDER BY
-                year, totalRevenue DESC
-            """, nativeQuery = true)
+                year, total_revenue DESC
+                """, nativeQuery = true)
     List<CategoriesYearPrice> findYearlyCategoryStatsById(
             @Param("categoryId") Integer categoryId,
             @Param("year") Integer year);

@@ -59,18 +59,19 @@ public interface TransactionMethodByMerchantRepository extends JpaRepository<Tra
                         t.created_at >= dr.range2_start AND t.created_at < dr.range2_end
                     )
                     WHERE t.deleted_at IS NULL
-                      AND t.payment_status = 'success'
+                      AND t.status = 'SUCCESS'
                       AND t.merchant_id = :merchantId
                     GROUP BY date_trunc('month', t.created_at), t.payment_method
                 )
             SELECT
                 TO_CHAR(ac.activity_month, 'Mon') AS month,
-                ac.payment_method,
-                COALESCE(mt.total_transactions, 0) AS total_transactions,
-                COALESCE(mt.total_amount, 0)::BIGINT AS total_amount
+                ac.payment_method AS paymentMethod,
+                COALESCE(mt.total_transactions, 0)::int AS totalTransactions,
+                COALESCE(mt.total_amount, 0)::bigint AS totalAmount
             FROM all_combinations ac
-            LEFT JOIN monthly_transactions mt ON
-                ac.activity_month = mt.activity_month AND ac.payment_method = mt.payment_method
+            LEFT JOIN monthly_transactions mt
+                ON ac.activity_month = mt.activity_month
+                AND ac.payment_method = mt.payment_method
             ORDER BY ac.activity_month, ac.payment_method
             """, nativeQuery = true)
     List<TransactionMonthlyMethod> findMonthlyTransactionMethodsSuccessByMerchant(
@@ -126,18 +127,19 @@ public interface TransactionMethodByMerchantRepository extends JpaRepository<Tra
                         t.created_at >= dr.range2_start AND t.created_at < dr.range2_end
                     )
                     WHERE t.deleted_at IS NULL
-                      AND t.payment_status = 'failed'
+                      AND t.status = 'FAILED'
                       AND t.merchant_id = :merchantId
                     GROUP BY date_trunc('month', t.created_at), t.payment_method
                 )
             SELECT
                 TO_CHAR(ac.activity_month, 'Mon') AS month,
-                ac.payment_method,
-                COALESCE(mt.total_transactions, 0) AS total_transactions,
-                COALESCE(mt.total_amount, 0)::BIGINT AS total_amount
+                ac.payment_method AS paymentMethod,
+                COALESCE(mt.total_transactions, 0)::int AS totalTransactions,
+                COALESCE(mt.total_amount, 0)::bigint AS totalAmount
             FROM all_combinations ac
-            LEFT JOIN monthly_transactions mt ON
-                ac.activity_month = mt.activity_month AND ac.payment_method = mt.payment_method
+            LEFT JOIN monthly_transactions mt
+                ON ac.activity_month = mt.activity_month
+                AND ac.payment_method = mt.payment_method
             ORDER BY ac.activity_month, ac.payment_method
             """, nativeQuery = true)
     List<TransactionMonthlyMethod> findMonthlyTransactionMethodsFailedByMerchant(
@@ -180,18 +182,20 @@ public interface TransactionMethodByMerchantRepository extends JpaRepository<Tra
                     FROM transactions t
                     WHERE
                         t.deleted_at IS NULL
-                        AND t.payment_status = 'success'
+                        AND t.status = 'SUCCESS'
                         AND t.merchant_id = :merchantId
                         AND EXTRACT(YEAR FROM t.created_at) BETWEEN (SELECT start_year FROM year_range) AND (SELECT end_year FROM year_range)
                     GROUP BY EXTRACT(YEAR FROM t.created_at), t.payment_method
                 )
             SELECT
-                ac.year,
-                ac.payment_method,
-                COALESCE(yt.total_transactions, 0) AS total_transactions,
-                COALESCE(yt.total_amount, 0)::BIGINT AS total_amount
+                ac.year AS year,
+                ac.payment_method AS paymentMethod,
+                COALESCE(yt.total_transactions, 0)::int AS totalTransactions,
+                COALESCE(yt.total_amount, 0)::bigint AS totalAmount
             FROM all_combinations ac
-            LEFT JOIN yearly_transactions yt ON ac.year = yt.year AND ac.payment_method = yt.payment_method
+            LEFT JOIN yearly_transactions yt
+                ON ac.year = yt.year
+                AND ac.payment_method = yt.payment_method
             ORDER BY ac.year, ac.payment_method
             """, nativeQuery = true)
     List<TransactionYearlyMethod> findYearlyTransactionMethodsSuccessByMerchant(
@@ -231,19 +235,22 @@ public interface TransactionMethodByMerchantRepository extends JpaRepository<Tra
                     FROM transactions t
                     WHERE
                         t.deleted_at IS NULL
-                        AND t.payment_status = 'failed'
+                        AND t.status = 'FAILED'
                         AND t.merchant_id = :merchantId
                         AND EXTRACT(YEAR FROM t.created_at) BETWEEN (SELECT start_year FROM year_range) AND (SELECT end_year FROM year_range)
                     GROUP BY EXTRACT(YEAR FROM t.created_at), t.payment_method
                 )
             SELECT
-                ac.year,
-                ac.payment_method,
-                COALESCE(yt.total_transactions, 0) AS total_transactions,
-                COALESCE(yt.total_amount, 0)::BIGINT AS total_amount
+                ac.year AS year,
+                ac.payment_method AS paymentMethod,
+                COALESCE(yt.total_transactions, 0)::int AS totalTransactions,
+                COALESCE(yt.total_amount, 0)::bigint AS totalAmount
             FROM all_combinations ac
-            LEFT JOIN yearly_transactions yt ON ac.year = yt.year AND ac.payment_method = yt.payment_method
+            LEFT JOIN yearly_transactions yt
+                ON ac.year = yt.year
+                AND ac.payment_method = yt.payment_method
             ORDER BY ac.year, ac.payment_method
+
             """, nativeQuery = true)
     List<TransactionYearlyMethod> findYearlyTransactionMethodsFailedByMerchant(
             @Param("merchantId") Long merchantId,

@@ -49,15 +49,15 @@ public interface CategoryPriceByMerchantRepository extends JpaRepository<Categor
             )
             SELECT
                 TO_CHAR(mcs.activity_month, 'Mon') AS month,
-                mcs.category_id,
-                mcs.category_name,
-                mcs.order_count,
-                mcs.items_sold,
-                mcs.totalRevenue
+                mcs.category_id AS categoryId,
+                mcs.category_name AS categoryName,
+                mcs.order_count AS orderCount,
+                mcs.items_sold AS itemsSold,
+                mcs.total_revenue AS totalRevenue
             FROM
                 monthly_category_stats mcs
             ORDER BY
-                mcs.activity_month, mcs.totalRevenue DESC
+                mcs.activity_month, mcs.total_revenue DESC
             """, nativeQuery = true)
     List<CategoriesMonthPrice> findMonthlyCategoryStatsByMerchant(
             @Param("merchantId") Integer merchantId,
@@ -92,17 +92,17 @@ public interface CategoryPriceByMerchantRepository extends JpaRepository<Categor
                     c.category_id, c.name, EXTRACT(YEAR FROM o.created_at)
             )
             SELECT
-                year,
-                category_id,
-                category_name,
-                order_count,
-                items_sold,
-                totalRevenue,
-                unique_products_sold
+                year AS year,
+                category_id AS categoryId,
+                category_name AS categoryName,
+                order_count AS orderCount,
+                items_sold AS itemsSold,
+                total_revenue AS totalRevenue,
+                unique_products_sold AS uniqueProductsSold
             FROM
                 last_five_years
             ORDER BY
-                year, totalRevenue DESC
+                year, total_revenue DESC
             """, nativeQuery = true)
     List<CategoriesYearPrice> findYearlyCategoryStatsByMerchant(
             @Param("merchantId") Integer merchantId,

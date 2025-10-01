@@ -13,70 +13,70 @@ import com.sanedge.ecommerce.models.transaction.Transaction;
 
 @Repository
 public interface TransactionQueryRepository extends JpaRepository<Transaction, Long> {
-    @Query("""
-                SELECT t FROM Transaction t
-                WHERE t.deletedAt IS NULL
-                  AND (
-                       :keyword IS NULL
-                       OR LOWER(t.paymentMethod) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                       OR LOWER(CAST(t.status AS string)) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                  )
-                ORDER BY t.createdAt DESC
-            """)
-    Page<Transaction> findTransactions(@Param("keyword") String keyword, Pageable pageable);
+  @Query("""
+          SELECT t FROM Transaction t
+          WHERE t.deletedAt IS NULL
+            AND (
+                 :keyword IS NULL
+                 OR LOWER(t.paymentMethod) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                 OR LOWER(t.status) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
+          ORDER BY t.createdAt DESC
+      """)
+  Page<Transaction> findTransactions(@Param("keyword") String keyword, Pageable pageable);
 
-    @Query("""
-                SELECT t FROM Transaction t
-                WHERE t.deletedAt IS NULL
-                  AND (
-                       :keyword IS NULL OR
-                       LOWER(t.paymentMethod) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                       OR LOWER(CAST(t.status AS string)) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                      )
-                ORDER BY t.createdAt DESC
-            """)
-    Page<Transaction> findActiveTransactions(@Param("keyword") String keyword, Pageable pageable);
+  @Query("""
+          SELECT t FROM Transaction t
+          WHERE t.deletedAt IS NULL
+            AND (
+                 :keyword IS NULL OR
+                 LOWER(t.paymentMethod) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                 OR LOWER(t.status) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                )
+          ORDER BY t.createdAt DESC
+      """)
+  Page<Transaction> findActiveTransactions(@Param("keyword") String keyword, Pageable pageable);
 
-    @Query("""
-                SELECT t FROM Transaction t
-                WHERE t.deletedAt IS NOT NULL
-                  AND (
-                        :keyword IS NULL OR
-                        LOWER(t.paymentMethod) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                        OR LOWER(CAST(t.status AS string)) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                      )
-                ORDER BY t.deletedAt DESC
-            """)
-    Page<Transaction> findTrashedTransactions(@Param("keyword") String keyword, Pageable pageable);
+  @Query("""
+          SELECT t FROM Transaction t
+          WHERE t.deletedAt IS NOT NULL
+            AND (
+                  :keyword IS NULL OR
+                  LOWER(t.paymentMethod) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR LOWER(t.status) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                )
+          ORDER BY t.deletedAt DESC
+      """)
+  Page<Transaction> findTrashedTransactions(@Param("keyword") String keyword, Pageable pageable);
 
-    @Query("""
-                SELECT t FROM Transaction t
-                WHERE t.deletedAt IS NULL
-                  AND (
-                      :keyword IS NULL
-                      OR LOWER(t.paymentMethod) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                      OR LOWER(CAST(t.status AS string)) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                  )
-                  AND (:merchantId IS NULL OR t.merchantId = :merchantId)
-                ORDER BY t.createdAt DESC
-            """)
-    Page<Transaction> findTransactionsByMerchant(
-            @Param("keyword") String keyword,
-            @Param("merchantId") Integer merchantId,
-            Pageable pageable);
+  @Query("""
+          SELECT t FROM Transaction t
+          WHERE t.deletedAt IS NULL
+            AND (
+                :keyword IS NULL
+                OR LOWER(t.paymentMethod) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(t.status) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
+            AND (:merchantId IS NULL OR t.merchantId = :merchantId)
+          ORDER BY t.createdAt DESC
+      """)
+  Page<Transaction> findTransactionsByMerchant(
+      @Param("keyword") String keyword,
+      @Param("merchantId") Integer merchantId,
+      Pageable pageable);
 
-    @Query("""
-                SELECT t FROM Transaction t
-                WHERE t.transactionId = :transactionId
-                AND t.deletedAt IS NULL
-            """)
-    Optional<Transaction> findTransactionById(@Param("transactionId") Long transactionId);
+  @Query("""
+          SELECT t FROM Transaction t
+          WHERE t.transactionId = :transactionId
+          AND t.deletedAt IS NULL
+      """)
+  Optional<Transaction> findTransactionById(@Param("transactionId") Long transactionId);
 
-    @Query("""
-                SELECT t FROM Transaction t
-                WHERE t.deletedAt IS NULL
-                AND t.orderId = :orderId
-                ORDER BY t.createdAt DESC
-            """)
-    Optional<Transaction> findByOrderId(@Param("orderId") Integer orderId);
+  @Query("""
+          SELECT t FROM Transaction t
+          WHERE t.deletedAt IS NULL
+          AND t.orderId = :orderId
+          ORDER BY t.createdAt DESC
+      """)
+  Optional<Transaction> findByOrderId(@Param("orderId") Integer orderId);
 }
