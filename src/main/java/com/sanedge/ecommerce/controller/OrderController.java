@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sanedge.ecommerce.domain.requests.category.MonthTotalPriceRequest;
 import com.sanedge.ecommerce.domain.requests.order.CreateOrderRequest;
 import com.sanedge.ecommerce.domain.requests.order.FindAllOrderByMerchantRequest;
 import com.sanedge.ecommerce.domain.requests.order.FindAllOrderRequest;
 import com.sanedge.ecommerce.domain.requests.order.MonthOrderMerchantRequest;
+import com.sanedge.ecommerce.domain.requests.order.MonthTotalRevenue;
 import com.sanedge.ecommerce.domain.requests.order.MonthTotalRevenueMerchantRequest;
 import com.sanedge.ecommerce.domain.requests.order.UpdateOrderRequest;
 import com.sanedge.ecommerce.domain.requests.order.YearOrderMerchantRequest;
@@ -26,10 +26,12 @@ import com.sanedge.ecommerce.domain.requests.order.YearTotalRevenueMerchantReque
 import com.sanedge.ecommerce.domain.responses.api.ApiResponse;
 import com.sanedge.ecommerce.domain.responses.api.ApiResponsePagination;
 import com.sanedge.ecommerce.domain.responses.order.OrderMonthlyResponse;
+import com.sanedge.ecommerce.domain.responses.order.OrderMonthlyTotalRevenueResponse;
 import com.sanedge.ecommerce.domain.responses.order.OrderRelationResponse;
 import com.sanedge.ecommerce.domain.responses.order.OrderResponse;
 import com.sanedge.ecommerce.domain.responses.order.OrderResponseDeleteAt;
 import com.sanedge.ecommerce.domain.responses.order.OrderYearlyResponse;
+import com.sanedge.ecommerce.domain.responses.order.OrderYearlyTotalRevenueResponse;
 import com.sanedge.ecommerce.service.order.OrderCommandService;
 import com.sanedge.ecommerce.service.order.OrderQueryService;
 import com.sanedge.ecommerce.service.order.stats.OrderSoldoutService;
@@ -103,15 +105,15 @@ public class OrderController {
     }
 
     @GetMapping("/monthly-total-revenue")
-    public ResponseEntity<ApiResponse<List<OrderMonthlyResponse>>> findMonthlyTotalRevenue(
-            MonthTotalPriceRequest req) {
+    public ResponseEntity<ApiResponse<List<OrderMonthlyTotalRevenueResponse>>> findMonthlyTotalRevenue(
+            MonthTotalRevenue req) {
         return ResponseEntity.ok(orderTotalRevenueService.findMonthlyStats(req));
     }
 
     @GetMapping("/yearly-total-revenue")
-    public ResponseEntity<ApiResponse<List<OrderYearlyResponse>>> findYearlyTotalRevenue(
-            MonthTotalPriceRequest req) {
-        return ResponseEntity.ok(orderTotalRevenueService.findYearlyStats(req));
+    public ResponseEntity<ApiResponse<List<OrderYearlyTotalRevenueResponse>>> findYearlyTotalRevenue(
+            @RequestParam Integer year) {
+        return ResponseEntity.ok(orderTotalRevenueService.findYearlyStats(year));
     }
 
     @GetMapping("/merchant/monthly-revenue")
@@ -127,13 +129,13 @@ public class OrderController {
     }
 
     @GetMapping("/merchant/monthly-total-revenue")
-    public ResponseEntity<ApiResponse<List<OrderMonthlyResponse>>> findMonthlyTotalRevenueByMerchant(
+    public ResponseEntity<ApiResponse<List<OrderMonthlyTotalRevenueResponse>>> findMonthlyTotalRevenueByMerchant(
             MonthTotalRevenueMerchantRequest req) {
         return ResponseEntity.ok(orderTotalRevenueByMerchantService.findMonthlyStatsByMerchant(req));
     }
 
     @GetMapping("/merchant/yearly-total-revenue")
-    public ResponseEntity<ApiResponse<List<OrderYearlyResponse>>> findYearlyTotalRevenueByMerchant(
+    public ResponseEntity<ApiResponse<List<OrderYearlyTotalRevenueResponse>>> findYearlyTotalRevenueByMerchant(
             YearTotalRevenueMerchantRequest req) {
         return ResponseEntity.ok(orderTotalRevenueByMerchantService.findYearlyStatsByMerchant(req));
     }
