@@ -39,16 +39,16 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Service
 public class OrderCommandImplService implements OrderCommandService {
-    private MerchantQueryRepository merchantQueryRepository;
-    private UserQueryRepository userQueryRepository;
-    private OrderQueryRepository orderQueryRepository;
-    private OrderCommandRepository orderCommandRepository;
-    private OrderItemRepository orderItemRepository;
-    private ShippingAddressQueryRepository shippingAddressQueryRepository;
-    private ShippingAddressCommandRepository shippingAddressCommandRepository;
-    private Validator validator;
-    private ProductQueryRepository productQueryRepository;
-    private ProductCommandRepository productCommandRepository;
+    private final MerchantQueryRepository merchantQueryRepository;
+    private final UserQueryRepository userQueryRepository;
+    private final OrderQueryRepository orderQueryRepository;
+    private final OrderCommandRepository orderCommandRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final ShippingAddressQueryRepository shippingAddressQueryRepository;
+    private final ShippingAddressCommandRepository shippingAddressCommandRepository;
+    private final Validator validator;
+    private final ProductQueryRepository productQueryRepository;
+    private final ProductCommandRepository productCommandRepository;
 
     @Override
     public ApiResponse<OrderResponse> create(CreateOrderRequest request) {

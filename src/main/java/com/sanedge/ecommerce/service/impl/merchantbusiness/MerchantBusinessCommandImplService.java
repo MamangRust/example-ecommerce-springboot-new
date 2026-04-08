@@ -27,10 +27,10 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class MerchantBusinessCommandImplService implements MerchantBusinessCommandService {
 
-    private MerchantBusinessCommandRepository merchantBusinessCommandRepository;
-    private MerchantBusinessQueryRepository merchantBusinessQueryRepository;
-    private MerchantQueryRepository merchantQueryRepository;
-    private Validator validator;
+    private final MerchantBusinessCommandRepository merchantBusinessCommandRepository;
+    private final MerchantBusinessQueryRepository merchantBusinessQueryRepository;
+    private final MerchantQueryRepository merchantQueryRepository;
+    private final Validator validator;
 
     @Override
     public ApiResponse<MerchantBusinessResponse> createMerchantBusiness(CreateMerchantBusinessRequest req) {

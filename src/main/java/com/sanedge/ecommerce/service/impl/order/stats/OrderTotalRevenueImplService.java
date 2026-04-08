@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class OrderTotalRevenueImplService implements OrderTotalRevenueService {
 
-        private OrderTotalRevenueRepository orderTotalRevenueRepository;
+        private final OrderTotalRevenueRepository orderTotalRevenueRepository;
 
         @Override
         public ApiResponse<List<OrderMonthlyTotalRevenueResponse>> findMonthlyStats(MonthTotalRevenue req) {

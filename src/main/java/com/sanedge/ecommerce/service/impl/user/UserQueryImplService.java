@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Service
 public class UserQueryImplService implements UserQueryService {
-        private UserQueryRepository userQueryRepository;
+        private final UserQueryRepository userQueryRepository;
 
         @Override
         public ApiResponsePagination<List<UserResponse>> findAll(FindAllUserRequest req) {

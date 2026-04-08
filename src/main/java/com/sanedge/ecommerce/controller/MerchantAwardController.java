@@ -3,6 +3,7 @@ package com.sanedge.ecommerce.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -34,36 +35,42 @@ public class MerchantAwardController {
     private final MerchantAwardCommandService commandService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponsePagination<List<MerchantAwardResponse>>> findAll(
             @ModelAttribute FindAllMerchantRequest req) {
         return ResponseEntity.ok(queryService.findAll(req));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponse<MerchantAwardResponse>> findById(
             @PathVariable Integer id) {
         return ResponseEntity.ok(queryService.findById(id));
     }
 
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponsePagination<List<MerchantAwardResponseDeleteAt>>> findByActive(
             @ModelAttribute FindAllMerchantRequest req) {
         return ResponseEntity.ok(queryService.findByActive(req));
     }
 
     @GetMapping("/trashed")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponsePagination<List<MerchantAwardResponseDeleteAt>>> findByTrashed(
             @ModelAttribute FindAllMerchantRequest req) {
         return ResponseEntity.ok(queryService.findByTrashed(req));
     }
 
     @PostMapping("/create")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<MerchantAwardResponse>> create(
             @Valid @RequestBody CreateMerchantAwardRequest req) {
         return ResponseEntity.ok(commandService.createMerchantAward(req));
     }
 
     @PostMapping("/update/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<MerchantAwardResponse>> update(
             @PathVariable Integer id,
             @Valid @RequestBody UpdateMerchantAwardRequest req) {
@@ -72,29 +79,34 @@ public class MerchantAwardController {
     }
 
     @PostMapping("/trashed/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<MerchantAwardResponseDeleteAt>> trashed(
             @PathVariable Integer id) {
         return ResponseEntity.ok(commandService.trashedMerchantAward(id));
     }
 
     @PostMapping("/restore/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<MerchantAwardResponseDeleteAt>> restore(
             @PathVariable Integer id) {
         return ResponseEntity.ok(commandService.restoreMerchantAward(id));
     }
 
     @DeleteMapping("/permanent/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<Boolean>> deletePermanent(
             @PathVariable Integer id) {
         return ResponseEntity.ok(commandService.deleteMerchantAwardPermanent(id));
     }
 
     @PostMapping("/restore/all")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<Boolean>> restoreAll() {
         return ResponseEntity.ok(commandService.restoreAllMerchantAward());
     }
 
     @PostMapping("/permanent/all")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<Boolean>> deleteAllPermanent() {
         return ResponseEntity.ok(commandService.deleteAllMerchantAwardPermanent());
     }

@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -60,6 +61,7 @@ public class CategoryController {
     private final CategoryPriceByIdService categoryPriceByIdService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponsePagination<List<CategoryResponse>>> findAll(
             @ModelAttribute FindAllCategoryRequest req) {
 
@@ -67,12 +69,14 @@ public class CategoryController {
     }
 
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponsePagination<List<CategoryResponseDeleteAt>>> findByActive(
             @ModelAttribute FindAllCategoryRequest req) {
         return ResponseEntity.ok(categoryQueryService.findByActive(req));
     }
 
     @GetMapping("/trashed")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponsePagination<List<CategoryResponseDeleteAt>>> findByTrashed(
             @ModelAttribute FindAllCategoryRequest req) {
 
@@ -80,59 +84,69 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponse<CategoryResponse>> findById(@PathVariable Integer id) {
         return ResponseEntity.ok(categoryQueryService.findById(id));
     }
 
     @GetMapping("/monthly-total-pricing")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<List<CategoriesMonthlyTotalPriceResponse>>> findMonthTotalPrice(
             @ModelAttribute MonthTotalPriceRequest req) {
         return ResponseEntity.ok(categoryTotalPriceService.findMonthlyTotalPrice(req));
     }
 
     @GetMapping("/yearly-total-pricing")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<List<CategoriesYearlyTotalPriceResponse>>> findYearTotalPrice(
             @RequestParam Integer year) {
         return ResponseEntity.ok(categoryTotalPriceService.findYearlyTotalPrice(year));
     }
 
     @GetMapping("/merchant/monthly-total-pricing")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<List<CategoriesMonthlyTotalPriceResponse>>> findMonthTotalPriceByMerchant(
             @ModelAttribute MonthTotalPriceMerchantRequest req) {
         return ResponseEntity.ok(categoryTotalPriceByMerchantService.findMonthlyTotalPriceByMerchant(req));
     }
 
     @GetMapping("/merchant/yearly-total-pricing")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<List<CategoriesYearlyTotalPriceResponse>>> findYearTotalPriceByMerchant(
             @ModelAttribute YearTotalPriceMerchantRequest req) {
         return ResponseEntity.ok(categoryTotalPriceByMerchantService.findYearlyTotalPriceByMerchant(req));
     }
 
     @GetMapping("/mycategory/monthly-total-pricing")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<List<CategoriesMonthlyTotalPriceResponse>>> findMonthTotalPriceById(
             @ModelAttribute MonthTotalPriceIdRequest req) {
         return ResponseEntity.ok(categoryTotalPriceByIdService.findMonthlyTotalPriceById(req));
     }
 
     @GetMapping("/mycategory/yearly-total-pricing")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<List<CategoriesYearlyTotalPriceResponse>>> findYearTotalPriceById(
             @ModelAttribute YearTotalPriceIdRequest req) {
         return ResponseEntity.ok(categoryTotalPriceByIdService.findYearlyTotalPriceById(req));
     }
 
     @GetMapping("/monthly-pricing")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<List<CategoriesMonthPriceResponse>>> findMonthPrice(
             @RequestParam Integer year) {
         return ResponseEntity.ok(categoryPriceService.findMonthPrice(year));
     }
 
     @GetMapping("/yearly-pricing")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<List<CategoriesYearPriceResponse>>> findYearPrice(
             @RequestParam Integer year) {
         return ResponseEntity.ok(categoryPriceService.findYearPrice(year));
     }
 
     @GetMapping("/merchant/monthly-pricing")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<List<CategoriesMonthPriceResponse>>> findMonthPriceByMerchant(
             @ModelAttribute MonthPriceMerchantRequest req) {
 
@@ -140,24 +154,28 @@ public class CategoryController {
     }
 
     @GetMapping("/merchant/yearly-pricing")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<List<CategoriesYearPriceResponse>>> findYearPriceByMerchant(
             @ModelAttribute YearPriceMerchantRequest req) {
         return ResponseEntity.ok(categoryPriceByMerchantService.findYearPriceByMerchant(req));
     }
 
     @GetMapping("/mycategory/monthly-pricing")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<List<CategoriesMonthPriceResponse>>> findMonthPriceById(
             @ModelAttribute MonthPriceIdRequest req) {
         return ResponseEntity.ok(categoryPriceByIdService.findMonthPriceById(req));
     }
 
     @GetMapping("/mycategory/yearly-pricing")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<List<CategoriesYearPriceResponse>>> findYearPriceById(
             @ModelAttribute YearPriceIdRequest req) {
         return ResponseEntity.ok(categoryPriceByIdService.findYearPriceById(req));
     }
 
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(
             @Valid @ModelAttribute CreateCategoryRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -165,6 +183,7 @@ public class CategoryController {
     }
 
     @PostMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(
             @PathVariable Integer id,
             @Valid @ModelAttribute UpdateCategoryRequest req) {
@@ -173,26 +192,31 @@ public class CategoryController {
     }
 
     @PostMapping("/trashed/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<CategoryResponseDeleteAt>> trashedCategory(@PathVariable Integer id) {
         return ResponseEntity.ok(categoryCommandService.trashedCategory(id));
     }
 
     @PostMapping("/restore/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<CategoryResponseDeleteAt>> restoreCategory(@PathVariable Integer id) {
         return ResponseEntity.ok(categoryCommandService.restoreCategory(id));
     }
 
     @DeleteMapping("/permanent/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<Boolean>> deleteCategoryPermanent(@PathVariable Integer id) {
         return ResponseEntity.ok(categoryCommandService.deleteCategoryPermanent(id));
     }
 
     @PostMapping("/restore/all")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<Boolean>> restoreAllCategories() {
         return ResponseEntity.ok(categoryCommandService.restoreAllCategories());
     }
 
     @PostMapping("/permanent/all")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<Boolean>> deleteAllCategoriesPermanent() {
         return ResponseEntity.ok(categoryCommandService.deleteAllCategoriesPermanent());
     }

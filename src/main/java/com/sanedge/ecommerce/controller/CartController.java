@@ -3,6 +3,7 @@ package com.sanedge.ecommerce.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -29,6 +30,7 @@ public class CartController {
     private final CartService cartService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponsePagination<List<CartResponse>>> findAll(
             @ModelAttribute FindAllCartsRequest req) {
 
@@ -36,16 +38,19 @@ public class CartController {
     }
 
     @PostMapping("/create")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponse<CartResponse>> createCart(@Valid @RequestBody CreateCartRequest req) {
         return ResponseEntity.ok(cartService.createCart(req));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponse<Boolean>> deleteCart(@PathVariable Long id) {
         return ResponseEntity.ok(cartService.deletePermanent(id));
     }
 
     @PostMapping("/delete-all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'USER')")
     public ResponseEntity<ApiResponse<Boolean>> deleteAllCarts(@Valid @RequestBody DeleteCartRequest req) {
         return ResponseEntity.ok(cartService.deleteAllPermanently(req));
     }

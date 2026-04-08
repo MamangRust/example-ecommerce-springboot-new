@@ -1,6 +1,7 @@
 package com.sanedge.ecommerce.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,12 +26,14 @@ public class MerchantSocialLinkController {
     private final MerchantSocialLinkService service;
 
     @PostMapping("/create")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<MerchantSocialMediaLinkResponse>> create(
             @RequestBody CreateMerchantSocialRequest request) {
         return ResponseEntity.ok(service.create(request));
     }
 
     @PostMapping("/update/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<MerchantSocialMediaLinkResponse>> update(
             @PathVariable Integer id,
             @RequestBody UpdateMerchantSocialRequest request) {
@@ -39,29 +42,34 @@ public class MerchantSocialLinkController {
     }
 
     @PostMapping("/trash/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<MerchantSocialMediaLinkResponseDeleteAt>> trash(
             @PathVariable Integer id) {
         return ResponseEntity.ok(service.trash(id));
     }
 
     @PostMapping("/restore/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<MerchantSocialMediaLinkResponseDeleteAt>> restore(
             @PathVariable Integer id) {
         return ResponseEntity.ok(service.restore(id));
     }
 
     @DeleteMapping("/delete/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<Boolean>> delete(
             @PathVariable Integer id) {
         return ResponseEntity.ok(service.delete(id));
     }
 
     @PostMapping("/restore/all")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<Boolean>> restoreAll() {
         return ResponseEntity.ok(service.restoreAll());
     }
 
     @PostMapping("/delete/all")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<Boolean>> deleteAll() {
         return ResponseEntity.ok(service.deleteAll());
     }

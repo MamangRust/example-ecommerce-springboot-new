@@ -33,12 +33,12 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Service
 public class UserCommandImplService implements UserCommandService {
-    private UserQueryRepository userQueryRepository;
-    private RoleQueryRepository roleQueryRepository;
-    private UserRoleRepository userRoleRepository;
-    private UserCommandRepository userCommandRepository;
-    private PasswordEncoder passwordEncoder;
-    private Validator validator;
+    private final UserQueryRepository userQueryRepository;
+    private final RoleQueryRepository roleQueryRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final UserCommandRepository userCommandRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final Validator validator;
 
     @Override
     public ApiResponse<UserResponse> create(CreateUserRequest req) {

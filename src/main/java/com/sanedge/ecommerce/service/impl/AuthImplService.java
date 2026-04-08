@@ -40,14 +40,14 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class AuthImplService implements AuthService {
 
-        private AuthenticationManager authenticationManager;
-        private UserQueryRepository userQueryRepository;
-        private UserCommandRepository userCommandRepository;
-        private JwtProvider jwtProvider;
-        private PasswordEncoder passwordEncoder;
-        private RefreshTokenQueryRepository refreshTokenQueryRepository;
-        private RefreshTokenCommandRepository refreshTokenCommandRepository;
-        private RoleQueryRepository roleQueryRepository;
+        private final  AuthenticationManager authenticationManager;
+        private final UserQueryRepository userQueryRepository;
+        private final UserCommandRepository userCommandRepository;
+        private final JwtProvider jwtProvider;
+        private final PasswordEncoder passwordEncoder;
+        private final RefreshTokenQueryRepository refreshTokenQueryRepository;
+        private final RefreshTokenCommandRepository refreshTokenCommandRepository;
+        private final RoleQueryRepository roleQueryRepository;
 
         @Override
         public ApiResponse<TokenResponse> login(AuthRequest loginRequest) {
@@ -107,7 +107,7 @@ public class AuthImplService implements AuthService {
                         throw new IllegalArgumentException("Email already registered");
                 }
 
-                Role role = roleQueryRepository.findByRoleName("ROLE_ADMIN")
+                Role role = roleQueryRepository.findByRoleName("ADMIN")
                                 .orElseThrow(() -> new ResourceNotFoundException("Default role not found"));
 
                 User newUser = new User();

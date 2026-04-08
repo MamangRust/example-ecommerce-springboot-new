@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class MerchantQueryImplService implements MerchantQueryService {
 
-        private MerchantQueryRepository merchantQueryRepository;
+        private final MerchantQueryRepository merchantQueryRepository;
 
         @Override
         public ApiResponsePagination<List<MerchantResponse>> findAll(FindAllMerchantRequest req) {
