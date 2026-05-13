@@ -16,10 +16,10 @@ public interface CategoryTotalPriceRepository extends JpaRepository<Category, Lo
     @Query(value = """
             WITH monthly_totals AS (
                     SELECT
-                        EXTRACT(YEAR FROM o.created_at)::TEXT AS year,
-                        EXTRACT(MONTH FROM o.created_at)::INTEGER AS month_num,
-                        TO_CHAR(o.created_at, 'FMMonth') AS month_name,
-                        COALESCE(SUM(o.total_price), 0)::bigint AS totalRevenue
+                        CAST(EXTRACT(YEAR FROM o.created_at) AS VARCHAR) AS "year",
+                        CAST(EXTRACT(MONTH FROM o.created_at) AS INTEGER) AS month_num,
+                        FORMATDATETIME(o.created_at, 'MMMM') AS month_name,
+                        CAST(COALESCE(SUM(o.total_price), 0) AS BIGINT) AS totalRevenue
                     FROM orders o
                     JOIN order_items oi ON o.order_id = oi.order_id
                     JOIN products p ON oi.product_id = p.product_id
@@ -32,24 +32,26 @@ public interface CategoryTotalPriceRepository extends JpaRepository<Category, Lo
                             OR
                             (EXTRACT(YEAR FROM o.created_at) = :endYear AND EXTRACT(MONTH FROM o.created_at) = :endMonth)
                         )
-                    GROUP BY year, month_num, month_name
+                    GROUP BY CAST(EXTRACT(YEAR FROM o.created_at) AS VARCHAR),
+                             CAST(EXTRACT(MONTH FROM o.created_at) AS INTEGER),
+                             FORMATDATETIME(o.created_at, 'MMMM')
                 ),
                 all_months AS (
-                    SELECT :startYear::TEXT AS year, :startMonth::INTEGER AS month_num,
-                           TO_CHAR(MAKE_DATE(:startYear, :startMonth, 1), 'FMMonth') AS month_name
+                    SELECT CAST(:startYear AS VARCHAR) AS "year", CAST(:startMonth AS INTEGER) AS month_num,
+                           FORMATDATETIME(PARSEDATETIME(CAST(:startYear AS VARCHAR) || '-' || CAST(:startMonth AS VARCHAR) || '-01', 'yyyy-M-dd'), 'MMMM') AS month_name
                     UNION
-                    SELECT :endYear::TEXT AS year, :endMonth::INTEGER AS month_num,
-                           TO_CHAR(MAKE_DATE(:endYear, :endMonth, 1), 'FMMonth') AS month_name
+                    SELECT CAST(:endYear AS VARCHAR) AS "year", CAST(:endMonth AS INTEGER) AS month_num,
+                           FORMATDATETIME(PARSEDATETIME(CAST(:endYear AS VARCHAR) || '-' || CAST(:endMonth AS VARCHAR) || '-01', 'yyyy-M-dd'), 'MMMM') AS month_name
                 )
                SELECT
-                    am.year AS year,
-                    am.month AS month,
+                    am."year" AS "year",
+                    am.month_name AS "month",
                     COALESCE(mt.totalRevenue, 0) AS totalRevenue
                 FROM all_months am
                 LEFT JOIN monthly_totals mt
-                    ON am.year = mt.year AND am.month_num = mt.month_num
-                ORDER BY am.year::INT DESC, am.month_num DESC
-                """, nativeQuery = true)
+                    ON am."year" = mt."year" AND am.month_num = mt.month_num
+                ORDER BY CAST(am."year" AS INTEGER) DESC, am.month_num DESC
+            """, nativeQuery = true)
     List<CategoriesMonthlyTotalPrice> findMonthlyTotalPrice(
             @Param("startYear") Integer startYear,
             @Param("startMonth") Integer startMonth,
@@ -59,8 +61,8 @@ public interface CategoryTotalPriceRepository extends JpaRepository<Category, Lo
     @Query(value = """
             WITH yearly_data AS (
                 SELECT
-                    EXTRACT(YEAR FROM o.created_at)::text AS year,
-                    COALESCE(SUM(o.total_price), 0)::bigint AS totalRevenue
+                    CAST(EXTRACT(YEAR FROM o.created_at) AS VARCHAR) AS "year",
+                    CAST(COALESCE(SUM(o.total_price), 0) AS BIGINT) AS totalRevenue
                 FROM
                     orders o
                 JOIN
@@ -82,19 +84,19 @@ public interface CategoryTotalPriceRepository extends JpaRepository<Category, Lo
                     EXTRACT(YEAR FROM o.created_at)
             ),
             all_years AS (
-                SELECT :year AS year
+                SELECT :year AS "year"
                 UNION
-                SELECT :year - 1 AS year
+                SELECT :year - 1 AS "year"
             )
             SELECT
-                a.year::text AS year,
-                COALESCE(yd.totalRevenue, 0)::bigint AS totalRevenue
+                CAST(a."year" AS VARCHAR) AS "year",
+                CAST(COALESCE(yd.totalRevenue, 0) AS BIGINT) AS totalRevenue
             FROM
                 all_years a
             LEFT JOIN
-                yearly_data yd ON a.year = yd.year
+                yearly_data yd ON CAST(a."year" AS VARCHAR) = yd."year"
             ORDER BY
-                a.year DESC
+                a."year" DESC
             """, nativeQuery = true)
     List<CategoriesYearlyTotalPrice> findYearlyTotalPrice(@Param("year") Integer year);
 }

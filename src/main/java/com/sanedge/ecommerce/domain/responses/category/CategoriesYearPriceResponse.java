@@ -15,12 +15,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CategoriesYearPriceResponse {
     private String year;
-    private Integer categoryId;
+    private Long categoryId;
     private String categoryName;
-    private Integer orderCount;
-    private Integer itemsSold;
+    private Long orderCount;
+    private Long itemsSold;
     private Long totalRevenue;
-    private Integer uniqueProductsSold;
+    private Long uniqueProductsSold;
 
     public static CategoriesYearPriceResponse from(CategoriesYearPrice response) {
         return CategoriesYearPriceResponse.builder()
@@ -29,7 +29,7 @@ public class CategoriesYearPriceResponse {
                 .categoryName(response.getCategoryName())
                 .orderCount(response.getOrderCount())
                 .itemsSold(response.getItemsSold())
-                .totalRevenue((long) response.getTotalRevenue())
+                .totalRevenue(response.getTotalRevenue())
                 .uniqueProductsSold(response.getUniqueProductsSold())
                 .build();
     }

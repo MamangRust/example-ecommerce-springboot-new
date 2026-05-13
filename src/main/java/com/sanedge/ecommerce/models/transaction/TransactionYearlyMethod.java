@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 public class TransactionYearlyMethod {
     private String year;
     private String paymentMethod;
-    private Integer totalTransactions;
+    private Long totalTransactions;
     private Long totalAmount;
 }

@@ -11,60 +11,103 @@ import jakarta.transaction.Transactional;
 @Repository
 public class TransactionCommandRepositoryImpl implements TransactionCommandRepositoryCustom {
 
-        @PersistenceContext
-        private EntityManager em;
+    @PersistenceContext
+    private EntityManager em;
 
-        @Override
-        @Transactional
-        public Transaction trashed(Long transactionId) {
-                return (Transaction) em.createNativeQuery(
-                                "UPDATE transactions SET deleted_at = CURRENT_TIMESTAMP " +
-                                                "WHERE transaction_id = :transactionId AND deleted_at IS NULL " +
-                                                "RETURNING *",
-                                Transaction.class)
-                                .setParameter("transactionId", transactionId)
-                                .getSingleResult();
+    private static final String TRASHED_QUERY = """
+            UPDATE transactions
+            SET deleted_at = CURRENT_TIMESTAMP
+            WHERE transaction_id = :transactionId
+              AND deleted_at IS NULL
+            """;
+
+    private static final String RESTORE_QUERY = """
+            UPDATE transactions
+            SET deleted_at = NULL
+            WHERE transaction_id = :transactionId
+              AND deleted_at IS NOT NULL
+            """;
+
+    private static final String DELETE_PERMANENT_QUERY = """
+            DELETE FROM transactions
+            WHERE transaction_id = :transactionId
+              AND deleted_at IS NOT NULL
+            """;
+
+    private static final String RESTORE_ALL_QUERY = """
+            UPDATE transactions
+            SET deleted_at = NULL
+            WHERE deleted_at IS NOT NULL
+            """;
+
+    private static final String DELETE_ALL_QUERY = """
+            DELETE FROM transactions
+            WHERE deleted_at IS NOT NULL
+            """;
+
+    @Override
+    @Transactional
+    public Transaction trashed(Long transactionId) {
+        Transaction tx = em.find(Transaction.class, transactionId);
+
+        if (tx != null) {
+            em.createNativeQuery(TRASHED_QUERY)
+                    .setParameter("transactionId", transactionId)
+                    .executeUpdate();
+
+            em.refresh(tx);
         }
 
-        @Override
-        @Transactional
-        public Transaction restore(Long transactionId) {
-                return (Transaction) em.createNativeQuery(
-                                "UPDATE transactions SET deleted_at = NULL " +
-                                                "WHERE transaction_id = :transactionId AND deleted_at IS NOT NULL " +
-                                                "RETURNING *",
-                                Transaction.class)
-                                .setParameter("transactionId", transactionId)
-                                .getSingleResult();
+        return tx;
+    }
+
+    @Override
+    @Transactional
+    public Transaction restore(Long transactionId) {
+        Transaction tx = em.find(Transaction.class, transactionId);
+
+        if (tx != null) {
+            em.createNativeQuery(RESTORE_QUERY)
+                    .setParameter("transactionId", transactionId)
+                    .executeUpdate();
+
+            em.refresh(tx);
         }
 
-        @Override
-        @Transactional
-        public Transaction deletePermanent(Long transactionId) {
-                return (Transaction) em.createNativeQuery(
-                                "DELETE FROM transactions " +
-                                                "WHERE transaction_id = :transactionId AND deleted_at IS NOT NULL " +
-                                                "RETURNING *",
-                                Transaction.class)
-                                .setParameter("transactionId", transactionId)
-                                .getSingleResult();
+        return tx;
+    }
+
+    @Override
+    @Transactional
+    public Transaction deletePermanent(Long transactionId) {
+        Transaction tx = em.find(Transaction.class, transactionId);
+
+        if (tx != null) {
+            em.createNativeQuery(DELETE_PERMANENT_QUERY)
+                    .setParameter("transactionId", transactionId)
+                    .executeUpdate();
+
+            em.detach(tx);
         }
 
-        @Override
-        @Transactional
-        public boolean restoreAllDeleted() {
-                int updated = em.createNativeQuery(
-                                "UPDATE transactions SET deleted_at = NULL WHERE deleted_at IS NOT NULL")
-                                .executeUpdate();
-                return updated > 0;
-        }
+        return tx;
+    }
 
-        @Override
-        @Transactional
-        public boolean deleteAllDeleted() {
-                int deleted = em.createNativeQuery(
-                                "DELETE FROM transactions WHERE deleted_at IS NOT NULL")
-                                .executeUpdate();
-                return deleted > 0;
-        }
+    @Override
+    @Transactional
+    public boolean restoreAllDeleted() {
+        int updated = em.createNativeQuery(RESTORE_ALL_QUERY)
+                .executeUpdate();
+
+        return updated > 0;
+    }
+
+    @Override
+    @Transactional
+    public boolean deleteAllDeleted() {
+        int deleted = em.createNativeQuery(DELETE_ALL_QUERY)
+                .executeUpdate();
+
+        return deleted > 0;
+    }
 }

@@ -9,10 +9,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CategoriesYearPrice {
     private String year;
-    private Integer categoryId;
+    private Long categoryId;
     private String categoryName;
-    private Integer orderCount;
-    private Integer itemsSold;
+    private Long orderCount;
+    private Long itemsSold;
     private Long totalRevenue;
-    private Integer uniqueProductsSold;
+    private Long uniqueProductsSold;
 }

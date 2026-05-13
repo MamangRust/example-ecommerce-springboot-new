@@ -13,45 +13,48 @@ import com.sanedge.ecommerce.models.order.OrderYearlyTotalRevenue;
 
 @Repository
 public interface OrderTotalRevenueByMerchantRepository extends JpaRepository<Order, Long> {
+
     @Query(value = """
-            WITH monthly_revenue AS (
-                SELECT
-                    EXTRACT(YEAR FROM o.created_at)::INT AS year,
-                    EXTRACT(MONTH FROM o.created_at)::INT AS month,
-                    COALESCE(SUM(o.total_price), 0)::INT AS total_revenue
-                FROM
-                    orders o
-                JOIN
-                    order_items oi ON o.order_id = oi.order_id
-                WHERE
-                    o.deleted_at IS NULL
-                    AND oi.deleted_at IS NULL
-                    AND o.merchant_id = :merchantId
-                    AND (
-                        (EXTRACT(YEAR FROM o.created_at) = :year1 AND EXTRACT(MONTH FROM o.created_at) = :month1)
-                        OR (EXTRACT(YEAR FROM o.created_at) = :year2 AND EXTRACT(MONTH FROM o.created_at) = :month2)
-                    )
-                GROUP BY
-                    EXTRACT(YEAR FROM o.created_at),
-                    EXTRACT(MONTH FROM o.created_at)
-            ),
-            all_months AS (
-                SELECT :year1::TEXT AS year, :month1 AS month, TO_CHAR(TO_DATE(:month1::TEXT, 'MM'), 'FMMonth') AS month_name
-                UNION
-                SELECT :year2::TEXT AS year, :month2 AS month, TO_CHAR(TO_DATE(:month2::TEXT, 'MM'), 'FMMonth') AS month_name
-            )
+            WITH
+                monthly_revenue AS (
+                    SELECT
+                        CAST(EXTRACT(YEAR FROM o.created_at) AS INTEGER) AS "year",
+                        CAST(EXTRACT(MONTH FROM o.created_at) AS INTEGER) AS month_num,
+                        CAST(COALESCE(SUM(o.total_price), 0) AS BIGINT) AS total_revenue
+                    FROM orders o
+                    JOIN order_items oi ON o.order_id = oi.order_id
+                    WHERE
+                        o.deleted_at IS NULL
+                        AND oi.deleted_at IS NULL
+                        AND o.merchant_id = :merchantId
+                        AND (
+                            (EXTRACT(YEAR FROM o.created_at) = :year1 AND EXTRACT(MONTH FROM o.created_at) = :month1)
+                            OR (EXTRACT(YEAR FROM o.created_at) = :year2 AND EXTRACT(MONTH FROM o.created_at) = :month2)
+                        )
+                    GROUP BY
+                        CAST(EXTRACT(YEAR FROM o.created_at) AS INTEGER),
+                        CAST(EXTRACT(MONTH FROM o.created_at) AS INTEGER)
+                ),
+                all_months AS (
+                    SELECT
+                        CAST(:year1 AS VARCHAR) AS "year",
+                        :month1 AS month_num,
+                        FORMATDATETIME(PARSEDATETIME('2000-' || LPAD(CAST(:month1 AS VARCHAR), 2, '0') || '-01', 'yyyy-MM-dd'), 'MMMM') AS month_name
+                    UNION
+                    SELECT
+                        CAST(:year2 AS VARCHAR) AS "year",
+                        :month2 AS month_num,
+                        FORMATDATETIME(PARSEDATETIME('2000-' || LPAD(CAST(:month2 AS VARCHAR), 2, '0') || '-01', 'yyyy-MM-dd'), 'MMMM') AS month_name
+                )
             SELECT
-                am.year AS year,
-                am.month_name AS month,
-                COALESCE(mr.total_revenue, 0) AS totalRevenue
-            FROM
-                all_months am
-            LEFT JOIN
-                monthly_revenue mr ON am.year::INT = mr.year
-                                 AND am.month = mr.month
-            ORDER BY
-                am.year DESC,
-                am.month DESC
+                am."year" AS "year",
+                am.month_name AS "month",
+                CAST(COALESCE(mr.total_revenue, 0) AS BIGINT) AS totalRevenue
+            FROM all_months am
+            LEFT JOIN monthly_revenue mr
+                   ON CAST(am."year" AS INTEGER) = mr."year"
+                  AND am.month_num = mr.month_num
+            ORDER BY am."year" DESC, am.month_num DESC
             """, nativeQuery = true)
     List<OrderMonthlyTotalRevenue> findMonthlyTotalRevenueByMerchant(
             @Param("merchantId") Long merchantId,
@@ -61,39 +64,34 @@ public interface OrderTotalRevenueByMerchantRepository extends JpaRepository<Ord
             @Param("month2") Integer month2);
 
     @Query(value = """
-            WITH yearly_revenue AS (
-                SELECT
-                    EXTRACT(YEAR FROM o.created_at)::INT AS year,
-                    COALESCE(SUM(o.total_price), 0)::INT AS total_revenue
-                FROM
-                    orders o
-                JOIN
-                    order_items oi ON o.order_id = oi.order_id
-                WHERE
-                    o.deleted_at IS NULL
-                    AND oi.deleted_at IS NULL
-                    AND o.merchant_id = :merchantId
-                    AND (
-                        EXTRACT(YEAR FROM o.created_at) = :year
-                        OR EXTRACT(YEAR FROM o.created_at) = :year - 1
-                    )
-                GROUP BY
-                    EXTRACT(YEAR FROM o.created_at)
-            ),
-            all_years AS (
-                SELECT :year AS year
-                UNION
-                SELECT :year - 1 AS year
-            )
+            WITH
+                yearly_revenue AS (
+                    SELECT
+                        CAST(EXTRACT(YEAR FROM o.created_at) AS INTEGER) AS "year",
+                        CAST(COALESCE(SUM(o.total_price), 0) AS BIGINT) AS total_revenue
+                    FROM orders o
+                    JOIN order_items oi ON o.order_id = oi.order_id
+                    WHERE
+                        o.deleted_at IS NULL
+                        AND oi.deleted_at IS NULL
+                        AND o.merchant_id = :merchantId
+                        AND (
+                            EXTRACT(YEAR FROM o.created_at) = :year
+                            OR EXTRACT(YEAR FROM o.created_at) = :year - 1
+                        )
+                    GROUP BY CAST(EXTRACT(YEAR FROM o.created_at) AS INTEGER)
+                ),
+                all_years AS (
+                    SELECT :year AS "year"
+                    UNION
+                    SELECT :year - 1 AS "year"
+                )
             SELECT
-                ay.year::TEXT AS year,
-                COALESCE(yr.total_revenue, 0) AS totalRevenue
-            FROM
-                all_years ay
-            LEFT JOIN
-                yearly_revenue yr ON ay.year = yr.year
-            ORDER BY
-                ay.year DESC
+                CAST(ay."year" AS VARCHAR) AS "year",
+                CAST(COALESCE(yr.total_revenue, 0) AS BIGINT) AS totalRevenue
+            FROM all_years ay
+            LEFT JOIN yearly_revenue yr ON ay."year" = yr."year"
+            ORDER BY ay."year" DESC
             """, nativeQuery = true)
     List<OrderYearlyTotalRevenue> findYearlyTotalRevenueByMerchant(
             @Param("merchantId") Long merchantId,

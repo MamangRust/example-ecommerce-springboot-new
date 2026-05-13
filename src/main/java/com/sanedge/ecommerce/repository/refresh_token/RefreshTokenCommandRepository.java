@@ -12,6 +12,7 @@ import jakarta.transaction.Transactional;
 
 @Repository
 public interface RefreshTokenCommandRepository extends JpaRepository<RefreshToken, Long> {
+
     @Modifying
     @Transactional
     @Query(value = """

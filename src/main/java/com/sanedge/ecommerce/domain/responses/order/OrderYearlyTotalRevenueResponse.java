@@ -20,7 +20,7 @@ public class OrderYearlyTotalRevenueResponse {
     public static OrderYearlyTotalRevenueResponse from(OrderYearlyTotalRevenue response) {
         return OrderYearlyTotalRevenueResponse.builder()
                 .year(response.getYear())
-                .totalRevenue((long) response.getTotalRevenue())
+                .totalRevenue(response.getTotalRevenue())
                 .build();
     }
 

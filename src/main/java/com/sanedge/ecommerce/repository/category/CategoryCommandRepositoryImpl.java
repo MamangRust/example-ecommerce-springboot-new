@@ -10,58 +10,106 @@ import jakarta.transaction.Transactional;
 
 @Repository
 public class CategoryCommandRepositoryImpl implements CategoryCommandRepositoryCustom {
-        @PersistenceContext
-        private EntityManager em;
 
-        @Override
-        @Transactional
-        public Category trashed(Long categoryId) {
-                return (Category) em.createNativeQuery(
-                                "UPDATE categories SET deleted_at = CURRENT_TIMESTAMP " +
-                                                "WHERE category_id = :categoryId AND deleted_at IS NULL " +
-                                                "RETURNING *",
-                                Category.class)
-                                .setParameter("categoryId", categoryId)
-                                .getSingleResult();
+    @PersistenceContext
+    private EntityManager em;
+
+    private static final String TRASHED_QUERY = """
+            UPDATE categories
+            SET deleted_at = CURRENT_TIMESTAMP
+            WHERE category_id = :categoryId
+              AND deleted_at IS NULL
+            """;
+
+    private static final String RESTORE_QUERY = """
+            UPDATE categories
+            SET deleted_at = NULL
+            WHERE category_id = :categoryId
+              AND deleted_at IS NOT NULL
+            """;
+
+    private static final String DELETE_PERMANENT_QUERY = """
+            DELETE FROM categories
+            WHERE category_id = :categoryId
+              AND deleted_at IS NOT NULL
+            """;
+
+    private static final String RESTORE_ALL_QUERY = """
+            UPDATE categories
+            SET deleted_at = NULL
+            WHERE deleted_at IS NOT NULL
+            """;
+
+    private static final String DELETE_ALL_QUERY = """
+            DELETE FROM categories
+            WHERE deleted_at IS NOT NULL
+            """;
+
+    @Override
+    @Transactional
+    public Category trashed(Long categoryId) {
+        Category category = em.find(Category.class, categoryId);
+
+        if (category != null) {
+            em.createNativeQuery(TRASHED_QUERY)
+                    .setParameter("categoryId", categoryId)
+                    .executeUpdate();
+
+            em.refresh(category);
         }
 
-        @Override
-        @Transactional
-        public Category restore(Long categoryId) {
-                return (Category) em.createNativeQuery(
-                                "UPDATE categories SET deleted_at = NULL " +
-                                                "WHERE category_id = :categoryId AND deleted_at IS NOT NULL " +
-                                                "RETURNING *",
-                                Category.class)
-                                .setParameter("categoryId", categoryId)
-                                .getSingleResult();
+        return category;
+    }
+
+    @Override
+    @Transactional
+    public Category restore(Long categoryId) {
+        Category category = em.find(Category.class, categoryId);
+
+        if (category != null) {
+            em.createNativeQuery(RESTORE_QUERY)
+                    .setParameter("categoryId", categoryId)
+                    .executeUpdate();
+
+            em.refresh(category);
         }
 
-        @Override
-        @Transactional
-        public boolean deletePermanent(Long categoryId) {
-                int deleted = em.createNativeQuery(
-                                "DELETE FROM categories WHERE category_id = :categoryId AND deleted_at IS NOT NULL")
-                                .setParameter("categoryId", categoryId)
-                                .executeUpdate();
-                return deleted > 0;
+        return category;
+    }
+
+    @Override
+    @Transactional
+    public boolean deletePermanent(Long categoryId) {
+        Category category = em.find(Category.class, categoryId);
+
+        if (category != null) {
+            int deleted = em.createNativeQuery(DELETE_PERMANENT_QUERY)
+                    .setParameter("categoryId", categoryId)
+                    .executeUpdate();
+
+            em.detach(category);
+
+            return deleted > 0;
         }
 
-        @Override
-        @Transactional
-        public boolean restoreAllDeleted() {
-                int updated = em.createNativeQuery(
-                                "UPDATE categories SET deleted_at = NULL WHERE deleted_at IS NOT NULL")
-                                .executeUpdate();
-                return updated > 0;
-        }
+        return false;
+    }
 
-        @Override
-        @Transactional
-        public boolean deleteAllDeleted() {
-                int deleted = em.createNativeQuery(
-                                "DELETE FROM categories WHERE deleted_at IS NOT NULL")
-                                .executeUpdate();
-                return deleted > 0;
-        }
+    @Override
+    @Transactional
+    public boolean restoreAllDeleted() {
+        int updated = em.createNativeQuery(RESTORE_ALL_QUERY)
+                .executeUpdate();
+
+        return updated > 0;
+    }
+
+    @Override
+    @Transactional
+    public boolean deleteAllDeleted() {
+        int deleted = em.createNativeQuery(DELETE_ALL_QUERY)
+                .executeUpdate();
+
+        return deleted > 0;
+    }
 }

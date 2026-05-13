@@ -1,5 +1,7 @@
 package com.sanedge.ecommerce.domain.responses.transaction;
 
+import java.util.List;
+
 import com.sanedge.ecommerce.models.transaction.TransactionYearlyAmountSuccess;
 
 import lombok.AllArgsConstructor;
@@ -13,14 +15,21 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TransactionYearlyAmountSuccessResponse {
     private String year;
-    private Integer totalSuccess;
-    private Integer totalAmount;
+    private Long totalSuccess;
+    private Long totalAmount;
 
-    public static TransactionYearlyAmountSuccessResponse from(TransactionYearlyAmountSuccess entity) {
+    public static TransactionYearlyAmountSuccessResponse from(TransactionYearlyAmountSuccess response) {
         return TransactionYearlyAmountSuccessResponse.builder()
-                .year(entity.getYear())
-                .totalSuccess(entity.getTotalSuccess())
-                .totalAmount(entity.getTotalAmount())
+                .year(response.getYear())
+                .totalSuccess(response.getTotalSuccess())
+                .totalAmount(response.getTotalAmount())
                 .build();
+    }
+
+    public static List<TransactionYearlyAmountSuccessResponse> fromList(
+            List<TransactionYearlyAmountSuccess> responses) {
+        if (responses == null)
+            return List.of();
+        return responses.stream().map(TransactionYearlyAmountSuccessResponse::from).toList();
     }
 }

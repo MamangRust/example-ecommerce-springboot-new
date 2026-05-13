@@ -10,68 +10,107 @@ import jakarta.transaction.Transactional;
 
 @Repository
 public class MerchantAwardCommandRepositoryImpl
-                implements MerchantAwardCommandRepositoryCustom {
+        implements MerchantAwardCommandRepositoryCustom {
 
-        @PersistenceContext
-        private EntityManager em;
+    @PersistenceContext
+    private EntityManager em;
 
-        @Override
-        @Transactional
-        public MerchantCertificationAndAward trashed(Long merchantCertificationId) {
-                return (MerchantCertificationAndAward) em.createNativeQuery(
-                                "UPDATE merchant_certifications_and_awards " +
-                                                "SET deleted_at = CURRENT_TIMESTAMP " +
-                                                "WHERE merchant_certification_id = :merchantCertificationId " +
-                                                "AND deleted_at IS NULL " +
-                                                "RETURNING *",
-                                MerchantCertificationAndAward.class)
-                                .setParameter("merchantCertificationId", merchantCertificationId)
-                                .getSingleResult();
+    private static final String TRASHED_QUERY = """
+            UPDATE merchant_certifications_and_awards
+            SET deleted_at = CURRENT_TIMESTAMP
+            WHERE merchant_certification_id = :merchantCertificationId
+              AND deleted_at IS NULL
+            """;
+
+    private static final String RESTORE_QUERY = """
+            UPDATE merchant_certifications_and_awards
+            SET deleted_at = NULL
+            WHERE merchant_certification_id = :merchantCertificationId
+              AND deleted_at IS NOT NULL
+            """;
+
+    private static final String DELETE_PERMANENT_QUERY = """
+            DELETE FROM merchant_certifications_and_awards
+            WHERE merchant_certification_id = :merchantCertificationId
+              AND deleted_at IS NOT NULL
+            """;
+
+    private static final String RESTORE_ALL_QUERY = """
+            UPDATE merchant_certifications_and_awards
+            SET deleted_at = NULL
+            WHERE deleted_at IS NOT NULL
+            """;
+
+    private static final String DELETE_ALL_QUERY = """
+            DELETE FROM merchant_certifications_and_awards
+            WHERE deleted_at IS NOT NULL
+            """;
+
+    @Override
+    @Transactional
+    public MerchantCertificationAndAward trashed(Long merchantCertificationId) {
+        MerchantCertificationAndAward award = em.find(MerchantCertificationAndAward.class, merchantCertificationId);
+
+        if (award != null) {
+            em.createNativeQuery(TRASHED_QUERY)
+                    .setParameter("merchantCertificationId", merchantCertificationId)
+                    .executeUpdate();
+
+            em.refresh(award);
         }
 
-        @Override
-        @Transactional
-        public MerchantCertificationAndAward restore(Long merchantCertificationId) {
-                return (MerchantCertificationAndAward) em.createNativeQuery(
-                                "UPDATE merchant_certifications_and_awards " +
-                                                "SET deleted_at = NULL " +
-                                                "WHERE merchant_certification_id = :merchantCertificationId " +
-                                                "AND deleted_at IS NOT NULL " +
-                                                "RETURNING *",
-                                MerchantCertificationAndAward.class)
-                                .setParameter("merchantCertificationId", merchantCertificationId)
-                                .getSingleResult();
+        return award;
+    }
+
+    @Override
+    @Transactional
+    public MerchantCertificationAndAward restore(Long merchantCertificationId) {
+        MerchantCertificationAndAward award = em.find(MerchantCertificationAndAward.class, merchantCertificationId);
+
+        if (award != null) {
+            em.createNativeQuery(RESTORE_QUERY)
+                    .setParameter("merchantCertificationId", merchantCertificationId)
+                    .executeUpdate();
+
+            em.refresh(award);
         }
 
-        @Override
-        @Transactional
-        public boolean deletePermanent(Long merchantCertificationId) {
-                int deleted = em.createNativeQuery(
-                                "DELETE FROM merchant_certifications_and_awards " +
-                                                "WHERE merchant_certification_id = :merchantCertificationId " +
-                                                "AND deleted_at IS NOT NULL")
-                                .setParameter("merchantCertificationId", merchantCertificationId)
-                                .executeUpdate();
-                return deleted > 0;
+        return award;
+    }
+
+    @Override
+    @Transactional
+    public boolean deletePermanent(Long merchantCertificationId) {
+        MerchantCertificationAndAward award = em.find(MerchantCertificationAndAward.class, merchantCertificationId);
+
+        if (award != null) {
+            int deleted = em.createNativeQuery(DELETE_PERMANENT_QUERY)
+                    .setParameter("merchantCertificationId", merchantCertificationId)
+                    .executeUpdate();
+
+            em.detach(award);
+
+            return deleted > 0;
         }
 
-        @Override
-        @Transactional
-        public boolean restoreAllDeleted() {
-                int updated = em.createNativeQuery(
-                                "UPDATE merchant_certifications_and_awards " +
-                                                "SET deleted_at = NULL WHERE deleted_at IS NOT NULL")
-                                .executeUpdate();
-                return updated > 0;
-        }
+        return false;
+    }
 
-        @Override
-        @Transactional
-        public boolean deleteAllDeleted() {
-                int deleted = em.createNativeQuery(
-                                "DELETE FROM merchant_certifications_and_awards " +
-                                                "WHERE deleted_at IS NOT NULL")
-                                .executeUpdate();
-                return deleted > 0;
-        }
+    @Override
+    @Transactional
+    public boolean restoreAllDeleted() {
+        int updated = em.createNativeQuery(RESTORE_ALL_QUERY)
+                .executeUpdate();
+
+        return updated > 0;
+    }
+
+    @Override
+    @Transactional
+    public boolean deleteAllDeleted() {
+        int deleted = em.createNativeQuery(DELETE_ALL_QUERY)
+                .executeUpdate();
+
+        return deleted > 0;
+    }
 }

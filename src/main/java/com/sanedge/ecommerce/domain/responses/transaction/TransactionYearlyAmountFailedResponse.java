@@ -1,5 +1,7 @@
 package com.sanedge.ecommerce.domain.responses.transaction;
 
+import java.util.List;
+
 import com.sanedge.ecommerce.models.transaction.TransactionYearlyAmountFailed;
 
 import lombok.AllArgsConstructor;
@@ -13,14 +15,20 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TransactionYearlyAmountFailedResponse {
     private String year;
-    private Integer totalFailed;
-    private Integer totalAmount;
+    private Long totalFailed;
+    private Long totalAmount;
 
-    public static TransactionYearlyAmountFailedResponse from(TransactionYearlyAmountFailed entity) {
+    public static TransactionYearlyAmountFailedResponse from(TransactionYearlyAmountFailed response) {
         return TransactionYearlyAmountFailedResponse.builder()
-                .year(entity.getYear())
-                .totalFailed(entity.getTotalFailed())
-                .totalAmount(entity.getTotalAmount())
+                .year(response.getYear())
+                .totalFailed(response.getTotalFailed())
+                .totalAmount(response.getTotalAmount())
                 .build();
+    }
+
+    public static List<TransactionYearlyAmountFailedResponse> fromList(List<TransactionYearlyAmountFailed> responses) {
+        if (responses == null)
+            return List.of();
+        return responses.stream().map(TransactionYearlyAmountFailedResponse::from).toList();
     }
 }

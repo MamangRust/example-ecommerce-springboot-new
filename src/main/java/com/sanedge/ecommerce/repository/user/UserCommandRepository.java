@@ -11,28 +11,7 @@ import com.sanedge.ecommerce.models.User;
 import jakarta.transaction.Transactional;
 
 @Repository
-public interface UserCommandRepository extends JpaRepository<User, Long> {
-    @Modifying
-    @Transactional
-    @Query(value = """
-            UPDATE users
-            SET deleted_at = CURRENT_TIMESTAMP
-            WHERE id = :userId
-              AND deleted_at IS NULL
-            RETURNING *
-            """, nativeQuery = true)
-    User trashed(@Param("userId") Long userId);
-
-    @Modifying
-    @Transactional
-    @Query(value = """
-            UPDATE users
-            SET deleted_at = NULL
-            WHERE id = :userId
-              AND deleted_at IS NOT NULL
-            RETURNING *
-            """, nativeQuery = true)
-    User restore(@Param("userId") Long userId);
+public interface UserCommandRepository extends JpaRepository<User, Long>, UserCommandRepositoryCustom {
 
     @Modifying
     @Transactional

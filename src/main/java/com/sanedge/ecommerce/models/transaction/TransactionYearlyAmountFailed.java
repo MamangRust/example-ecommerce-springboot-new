@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TransactionYearlyAmountFailed {
     private String year;
-    private Integer totalFailed;
-    private Integer totalAmount;
+    private Long totalFailed;
+    private Long totalAmount;
 }

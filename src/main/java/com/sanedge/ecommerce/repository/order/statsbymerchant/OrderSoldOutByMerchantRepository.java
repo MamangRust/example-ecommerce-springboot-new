@@ -13,29 +13,30 @@ import com.sanedge.ecommerce.models.order.OrderYearly;
 
 @Repository
 public interface OrderSoldOutByMerchantRepository extends JpaRepository<Order, Long> {
+
     @Query(value = """
-            WITH date_range AS (
-                SELECT
-                    date_trunc('month', TO_TIMESTAMP(:yearMonth, 'YYYYMM')) AS start_date,
-                    date_trunc('month', TO_TIMESTAMP(:yearMonth, 'YYYYMM')) + interval '1 year' - interval '1 day' AS end_date
-            ),
-            monthly_orders AS (
-                SELECT
-                    date_trunc('month', o.created_at) AS activity_month,
-                    COUNT(o.order_id)::INT AS order_count,
-                    SUM(o.total_price)::BIGINT AS total_revenue,
-                    SUM(oi.quantity)::INT AS total_items_sold
-                FROM orders o
-                JOIN order_items oi ON o.order_id = oi.order_id
-                WHERE o.deleted_at IS NULL
-                  AND oi.deleted_at IS NULL
-                  AND o.merchant_id = :merchantId
-                  AND o.created_at BETWEEN (SELECT start_date FROM date_range)
-                                       AND (SELECT end_date FROM date_range)
-                GROUP BY activity_month
-            )
+            WITH
+                date_range AS (
+                    SELECT
+                        PARSEDATETIME(CAST(:yearMonth AS VARCHAR) || CASE WHEN LENGTH(CAST(:yearMonth AS VARCHAR)) = 4 THEN '0101' ELSE '01' END, 'yyyyMMdd') AS start_date,
+                        DATEADD('DAY', -1, DATEADD('YEAR', 1, PARSEDATETIME(CAST(:yearMonth AS VARCHAR) || CASE WHEN LENGTH(CAST(:yearMonth AS VARCHAR)) = 4 THEN '0101' ELSE '01' END, 'yyyyMMdd'))) AS end_date
+                ),
+                monthly_orders AS (
+                    SELECT
+                        PARSEDATETIME(FORMATDATETIME(o.created_at, 'yyyy-MM-01'), 'yyyy-MM-dd') AS activity_month,
+                        CAST(COUNT(o.order_id) AS INTEGER) AS order_count,
+                        CAST(SUM(o.total_price) AS BIGINT) AS total_revenue,
+                        CAST(SUM(oi.quantity) AS INTEGER) AS total_items_sold
+                    FROM orders o
+                    JOIN order_items oi ON o.order_id = oi.order_id
+                    WHERE o.deleted_at IS NULL
+                      AND oi.deleted_at IS NULL
+                      AND o.merchant_id = :merchantId
+                      AND o.created_at BETWEEN (SELECT start_date FROM date_range) AND (SELECT end_date FROM date_range)
+                    GROUP BY PARSEDATETIME(FORMATDATETIME(o.created_at, 'yyyy-MM-01'), 'yyyy-MM-dd'), o.merchant_id
+                )
             SELECT
-                TO_CHAR(mo.activity_month, 'Mon') AS month,
+                FORMATDATETIME(mo.activity_month, 'MMM') AS "month",
                 mo.order_count AS orderCount,
                 mo.total_revenue AS totalRevenue,
                 mo.total_items_sold AS totalItemsSold
@@ -49,30 +50,30 @@ public interface OrderSoldOutByMerchantRepository extends JpaRepository<Order, L
     @Query(value = """
             WITH last_five_years AS (
                 SELECT
-                    EXTRACT(YEAR FROM o.created_at)::TEXT AS year,
-                    COUNT(o.order_id)::INT AS order_count,
-                    SUM(o.total_price)::BIGINT AS total_revenue,
-                    SUM(oi.quantity)::INT AS total_items_sold,
-                    COUNT(DISTINCT o.user_id)::INT AS active_cashiers,
-                    COUNT(DISTINCT oi.product_id)::INT AS unique_products_sold
+                    CAST(EXTRACT(YEAR FROM o.created_at) AS VARCHAR) AS "year",
+                    CAST(COUNT(o.order_id) AS INTEGER) AS order_count,
+                    CAST(SUM(o.total_price) AS BIGINT) AS total_revenue,
+                    CAST(SUM(oi.quantity) AS INTEGER) AS total_items_sold,
+                    CAST(COUNT(DISTINCT o.user_id) AS INTEGER) AS active_cashiers,
+                    CAST(COUNT(DISTINCT oi.product_id) AS INTEGER) AS unique_products_sold
                 FROM orders o
                 JOIN order_items oi ON o.order_id = oi.order_id
                 WHERE o.deleted_at IS NULL
                   AND oi.deleted_at IS NULL
                   AND o.merchant_id = :merchantId
-                  AND EXTRACT(YEAR FROM o.created_at) BETWEEN EXTRACT(YEAR FROM TO_TIMESTAMP(:yearMonth, 'YYYYMM')) - 4
-                                                           AND EXTRACT(YEAR FROM TO_TIMESTAMP(:yearMonth, 'YYYYMM'))
+                  AND EXTRACT(YEAR FROM o.created_at) BETWEEN EXTRACT(YEAR FROM PARSEDATETIME(CAST(:yearMonth AS VARCHAR) || CASE WHEN LENGTH(CAST(:yearMonth AS VARCHAR)) = 4 THEN '0101' ELSE '01' END, 'yyyyMMdd')) - 4
+                                                           AND EXTRACT(YEAR FROM PARSEDATETIME(CAST(:yearMonth AS VARCHAR) || CASE WHEN LENGTH(CAST(:yearMonth AS VARCHAR)) = 4 THEN '0101' ELSE '01' END, 'yyyyMMdd'))
                 GROUP BY EXTRACT(YEAR FROM o.created_at)
             )
             SELECT
-                year,
+                "year" AS "year",
                 order_count AS orderCount,
                 total_revenue AS totalRevenue,
                 total_items_sold AS totalItemsSold,
                 active_cashiers AS activeCashiers,
                 unique_products_sold AS uniqueProductsSold
             FROM last_five_years
-            ORDER BY year
+            ORDER BY "year"
             """, nativeQuery = true)
     List<OrderYearly> findYearlyOrdersByMerchant(
             @Param("merchantId") Integer merchantId,

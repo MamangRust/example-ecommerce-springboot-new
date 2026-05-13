@@ -22,7 +22,7 @@ public class CategoriesMonthlyTotalPriceResponse {
         return CategoriesMonthlyTotalPriceResponse.builder()
                 .year(response.getYear())
                 .month(response.getMonth())
-                .totalRevenue((long) response.getTotalRevenue())
+                .totalRevenue(response.getTotalRevenue())
                 .build();
     }
 

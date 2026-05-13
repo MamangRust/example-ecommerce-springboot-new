@@ -15,49 +15,42 @@ import com.sanedge.ecommerce.models.category.Category;
 public interface CategoryPriceByMerchantRepository extends JpaRepository<Category, Long> {
 
     @Query(value = """
-            WITH date_range AS (
-                SELECT
-                    date_trunc('year', make_date(:year, 1, 1)) AS start_date,
-                    date_trunc('year', make_date(:year, 1, 1)) + interval '1 year' - interval '1 day' AS end_date
-            ),
-            monthly_category_stats AS (
-                SELECT
-                    c.category_id,
-                    c.name AS category_name,
-                    date_trunc('month', o.created_at) AS activity_month,
-                    COUNT(DISTINCT o.order_id) AS order_count,
-                    SUM(oi.quantity) AS items_sold,
-                    COALESCE(SUM(o.total_price), 0)::bigint AS totalRevenue
-                FROM
-                    orders o
-                JOIN
-                    order_items oi ON o.order_id = oi.order_id
-                JOIN
-                    products p ON oi.product_id = p.product_id
-                JOIN
-                    categories c ON p.category_id = c.category_id
-                WHERE
-                    o.deleted_at IS NULL
-                    AND oi.deleted_at IS NULL
-                    AND p.deleted_at IS NULL
-                    AND c.deleted_at IS NULL
-                    AND o.merchant_id = :merchantId
-                    AND o.created_at BETWEEN (SELECT start_date FROM date_range)
-                                        AND (SELECT end_date FROM date_range)
-                GROUP BY
-                    c.category_id, c.name, activity_month
-            )
+            WITH
+                date_range AS (
+                    SELECT
+                        PARSEDATETIME(CAST(:year AS VARCHAR) || '-01-01', 'yyyy-MM-dd') AS start_date,
+                        DATEADD('DAY', -1, DATEADD('YEAR', 1, PARSEDATETIME(CAST(:year AS VARCHAR) || '-01-01', 'yyyy-MM-dd'))) AS end_date
+                ),
+                monthly_category_stats AS (
+                    SELECT
+                        c.category_id,
+                        c.name AS category_name,
+                        PARSEDATETIME(FORMATDATETIME(o.created_at, 'yyyy-MM-01'), 'yyyy-MM-dd') AS activity_month,
+                        COUNT(DISTINCT o.order_id) AS order_count,
+                        SUM(oi.quantity) AS items_sold,
+                        CAST(COALESCE(SUM(o.total_price), 0) AS BIGINT) AS totalRevenue
+                    FROM orders o
+                    JOIN order_items oi ON o.order_id = oi.order_id
+                    JOIN products p ON oi.product_id = p.product_id
+                    JOIN categories c ON p.category_id = c.category_id
+                    WHERE
+                        o.deleted_at IS NULL
+                        AND oi.deleted_at IS NULL
+                        AND p.deleted_at IS NULL
+                        AND c.deleted_at IS NULL
+                        AND o.merchant_id = :merchantId
+                        AND o.created_at BETWEEN (SELECT start_date FROM date_range) AND (SELECT end_date FROM date_range)
+                    GROUP BY c.category_id, c.name, PARSEDATETIME(FORMATDATETIME(o.created_at, 'yyyy-MM-01'), 'yyyy-MM-dd')
+                )
             SELECT
-                TO_CHAR(mcs.activity_month, 'Mon') AS month,
+                FORMATDATETIME(mcs.activity_month, 'MMM') AS "month",
                 mcs.category_id AS categoryId,
                 mcs.category_name AS categoryName,
                 mcs.order_count AS orderCount,
                 mcs.items_sold AS itemsSold,
-                mcs.total_revenue AS totalRevenue
-            FROM
-                monthly_category_stats mcs
-            ORDER BY
-                mcs.activity_month, mcs.total_revenue DESC
+                mcs.totalRevenue AS totalRevenue
+            FROM monthly_category_stats mcs
+            ORDER BY mcs.activity_month, mcs.totalRevenue DESC
             """, nativeQuery = true)
     List<CategoriesMonthPrice> findMonthlyCategoryStatsByMerchant(
             @Param("merchantId") Integer merchantId,
@@ -68,19 +61,15 @@ public interface CategoryPriceByMerchantRepository extends JpaRepository<Categor
                 SELECT
                     c.category_id,
                     c.name AS category_name,
-                    EXTRACT(YEAR FROM o.created_at)::text AS year,
+                    CAST(EXTRACT(YEAR FROM o.created_at) AS VARCHAR) AS "year",
                     COUNT(DISTINCT o.order_id) AS order_count,
                     SUM(oi.quantity) AS items_sold,
-                    COALESCE(SUM(o.total_price), 0)::bigint AS totalRevenue,
+                    CAST(COALESCE(SUM(o.total_price), 0) AS BIGINT) AS totalRevenue,
                     COUNT(DISTINCT oi.product_id) AS unique_products_sold
-                FROM
-                    orders o
-                JOIN
-                    order_items oi ON o.order_id = oi.order_id
-                JOIN
-                    products p ON oi.product_id = p.product_id
-                JOIN
-                    categories c ON p.category_id = c.category_id
+                FROM orders o
+                JOIN order_items oi ON o.order_id = oi.order_id
+                JOIN products p ON oi.product_id = p.product_id
+                JOIN categories c ON p.category_id = c.category_id
                 WHERE
                     o.deleted_at IS NULL
                     AND oi.deleted_at IS NULL
@@ -88,21 +77,18 @@ public interface CategoryPriceByMerchantRepository extends JpaRepository<Categor
                     AND c.deleted_at IS NULL
                     AND o.merchant_id = :merchantId
                     AND EXTRACT(YEAR FROM o.created_at) BETWEEN (:year - 4) AND :year
-                GROUP BY
-                    c.category_id, c.name, EXTRACT(YEAR FROM o.created_at)
+                GROUP BY c.category_id, c.name, CAST(EXTRACT(YEAR FROM o.created_at) AS VARCHAR)
             )
             SELECT
-                year AS year,
+                "year" AS "year",
                 category_id AS categoryId,
                 category_name AS categoryName,
                 order_count AS orderCount,
                 items_sold AS itemsSold,
-                total_revenue AS totalRevenue,
+                totalRevenue AS totalRevenue,
                 unique_products_sold AS uniqueProductsSold
-            FROM
-                last_five_years
-            ORDER BY
-                year, total_revenue DESC
+            FROM last_five_years
+            ORDER BY "year", totalRevenue DESC
             """, nativeQuery = true)
     List<CategoriesYearPrice> findYearlyCategoryStatsByMerchant(
             @Param("merchantId") Integer merchantId,

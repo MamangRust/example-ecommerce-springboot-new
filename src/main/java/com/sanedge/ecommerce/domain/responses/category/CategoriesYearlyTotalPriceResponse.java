@@ -20,11 +20,12 @@ public class CategoriesYearlyTotalPriceResponse {
     public static CategoriesYearlyTotalPriceResponse from(CategoriesYearlyTotalPrice response) {
         return CategoriesYearlyTotalPriceResponse.builder()
                 .year(response.getYear())
-                .totalRevenue((long) response.getTotalRevenue())
+                .totalRevenue(response.getTotalRevenue())
                 .build();
     }
 
-    public static List<CategoriesYearlyTotalPriceResponse> fromList(List<CategoriesYearlyTotalPrice> responses) {
+    public static List<CategoriesYearlyTotalPriceResponse> fromList(
+            List<CategoriesYearlyTotalPrice> responses) {
         if (responses == null)
             return List.of();
         return responses.stream().map(CategoriesYearlyTotalPriceResponse::from).toList();

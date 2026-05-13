@@ -73,6 +73,10 @@ public class CartImplService implements CartService {
             cart.setUserId(req.getUserId());
             cart.setProductId(req.getProductId());
             cart.setQuantity(req.getQuantity());
+            cart.setName("Product " + req.getProductId());
+            cart.setPrice(100);
+            cart.setImage("default.png");
+            cart.setWeight(100);
             cart.setCreatedAt(Timestamp.valueOf(LocalDateTime.now()));
 
             Cart savedCart = cartCommandRepository.save(cart);

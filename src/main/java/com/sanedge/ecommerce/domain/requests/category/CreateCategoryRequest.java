@@ -22,7 +22,7 @@ public class CreateCategoryRequest {
     @Schema(description = "Slug kategori", example = "elektronik")
     private String slugCategory;
 
-    @NotBlank
+    @jakarta.validation.constraints.NotNull
     @Schema(description = "URL atau path gambar kategori", example = "/images/elektronik.png")
     private MultipartFile imageCategory;
 }
